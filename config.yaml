@@ -1,0 +1,91 @@
+version: 1
+
+slack:
+  signingSecretEnv: SLACK_SIGNING_SECRET
+  botTokenEnv: BETTERSUPPORT_SLACK_BOT_TOKEN
+  responseMode: thread
+  postInterimMessage: true
+  ignoreBotMessages: true
+  ignoreEditsAndDeletes: true
+
+llm:
+  provider: openai
+  apiKeyEnv: BETTERCODE_LLM_OPENAI_API_KEY
+  model: gpt-5.4-nano-2026-03-17
+  maxTokens: 4096
+
+budgets:
+  maxToolCalls: 200
+  maxSubagentCalls: 3
+  maxWallClockMs: 120000
+  maxTokens: 300000
+  maxSearchResults: 100
+  maxFileBytes: 262144
+  maxFileLines: 1200
+
+access:
+  denyDirNames:
+    - .git
+    - node_modules
+    - .next
+    - dist
+    - build
+    - coverage
+    - .cache
+    - tmp
+    - temp
+    - vendor
+    - .turbo
+    - .yarn
+    - .pnpm-store
+  denyFilePatterns:
+    - '.env'
+    - '.env.*'
+    - '*.pem'
+    - '*.key'
+    - '*.p12'
+    - '*.pfx'
+    - '*.crt'
+    - 'id_rsa'
+    - 'id_dsa'
+    - '*.sqlite'
+    - '*.db'
+    - '*.dump'
+  codeExtensions:
+    - .ts
+    - .tsx
+    - .js
+    - .jsx
+    - .mjs
+    - .cjs
+    - .py
+    - .rb
+    - .go
+    - .java
+    - .kt
+    - .kts
+    - .graphql
+    - .gql
+    - .json
+    - .yaml
+    - .yml
+    - .md
+
+projects:
+  engage-workspace:
+    repoUrl: https://github.com/Betterworks/engage-workspace.git
+    branch: main
+    agentDir: .github/agents
+    defaultAgent: ProductLens
+    githubWebBaseUrl: https://github.com/Betterworks/engage-workspace
+    submodules: true
+    githubTokenEnv: GITHUB_TOKEN
+
+channels:
+  C0B55UR745B:
+    project: engage-workspace
+    agent: ProductLens
+    mode: auto
+    triggers:
+      appMention: true
+      questionLikeMessages: false
