@@ -220,7 +220,7 @@ def process_question(event: Dict[str, Any], config: Config):
         # Create budget tracker
         budget_tracker = BudgetTracker()
         
-        agent = Agent(config, tools, workspace, agent_dir, trace_callback, budget_tracker)
+        agent = Agent(config, tools, workspace, agent_dir, trace_callback, budget_tracker, project_root=repo_path)
         
         # Ask question
         answer = agent.ask(text, agent_name=channel_config.agent)

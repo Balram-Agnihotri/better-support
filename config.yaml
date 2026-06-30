@@ -10,7 +10,7 @@ slack:
 
 llm:
   provider: openai
-  apiKeyEnv: BETTERCODE_LLM_OPENAI_API_KEY
+  apiKeyEnv: BETTERSUPPORT_LLM_OPENAI_API_KEY
   model: gpt-5.4-nano-2026-03-17
   maxTokens: 4096
 

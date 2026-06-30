@@ -19,6 +19,12 @@ class Workspace:
         self.files_read: Dict[str, Dict[str, Any]] = {}
         self.findings: List[Dict[str, Any]] = []
         self.hypothesis: str = ""
+        # Cache file contents to avoid redundant disk reads
+        self._file_cache: Dict[str, str] = {}  # path -> full content
+        # Track recent tool calls for deduplication
+        self.recent_tool_calls: List[Dict[str, Any]] = []  # [{"name": str, "args": dict, "turn": int}]
+        # Track what we've learned in summarized form
+        self.key_learnings: List[str] = []
     
     def reset(self):
         """Reset workspace state."""
@@ -26,6 +32,9 @@ class Workspace:
         self.files_read.clear()
         self.findings.clear()
         self.hypothesis = ""
+        self._file_cache.clear()
+        self.recent_tool_calls.clear()
+        self.key_learnings.clear()
 
 
 class Tools:
@@ -188,7 +197,15 @@ class Tools:
                 "citations": []
             }
         
-        lines = full.read_text(encoding="utf-8", errors="ignore").splitlines()
+        # Check cache first
+        if rel in self.workspace._file_cache:
+            lines = self.workspace._file_cache[rel].splitlines()
+            logger.info(f"Using cached content for {rel}")
+        else:
+            content_str = full.read_text(encoding="utf-8", errors="ignore")
+            self.workspace._file_cache[rel] = content_str
+            lines = content_str.splitlines()
+        
         total = len(lines)
         start = max(1, int(startLine or 1))
         requested_end = int(endLine or min(total, start + READ_MAX_LINES - 1))
@@ -197,11 +214,10 @@ class Tools:
         numbered = "\n".join(f"{i}\t{lines[i-1]}" for i in range(start, end + 1))
         content = f"{rel} (lines {start}-{end} of {total})\n{numbered}"
         
-        self.workspace.files_read[rel] = {
-            "start": start,
-            "end": end,
-            "excerpt": clamp_text(numbered, 1200)
-        }
+        # Track read ranges
+        if rel not in self.workspace.files_read:
+            self.workspace.files_read[rel] = {"ranges": [], "total_lines": total}
+        self.workspace.files_read[rel]["ranges"].append({"start": start, "end": end})
         
         return {
             "ok": True,
@@ -304,10 +320,15 @@ class Tools:
             ))
         
         if self.workspace.files_read:
-            parts.append("Files read:\n" + "\n".join(
-                f'- {p}:L{v["start"]}-L{v["end"]}'
-                for p, v in self.workspace.files_read.items()
-            ))
+            files_list = []
+            for p, v in self.workspace.files_read.items():
+                if isinstance(v, dict) and "ranges" in v:
+                    ranges_str = ", ".join(f"L{r['start']}-{r['end']}" for r in v["ranges"][:3])
+                    files_list.append(f"- {p} ({ranges_str})")
+                else:
+                    # Legacy format support
+                    files_list.append(f"- {p}")
+            parts.append("Files read:\n" + "\n".join(files_list))
         
         if self.workspace.searches:
             parts.append("Searches:\n" + "\n".join(

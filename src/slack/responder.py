@@ -48,7 +48,7 @@ class SlackResponder:
         
         payload = {
             "channel": channel,
-            "text": formatted_text,
+            "text": formatted_text[:4000],  # Slack API limit for message text
         }
         
         if thread_ts:
